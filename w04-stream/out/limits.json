@@ -1,0 +1,49 @@
+{
+  "runs": [
+    {
+      "n": 100000,
+      "true_distinct": 36702,
+      "exact_s": 0.3692834060000223,
+      "exact_peak_bytes": 3925620,
+      "fm_estimate": 48438.05716940449,
+      "fm_s": 62.338186334000056,
+      "fm_peak_bytes": 4393,
+      "fm_ratio": 1.319766148150087
+    },
+    {
+      "n": 200000,
+      "true_distinct": 73410,
+      "exact_s": 0.9426922089999152,
+      "exact_peak_bytes": 5761083,
+      "fm_estimate": 93030.00285377169,
+      "fm_s": 123.36397252400002,
+      "fm_peak_bytes": 4393,
+      "fm_ratio": 1.2672660789234667
+    },
+    {
+      "n": 400000,
+      "true_distinct": 146970,
+      "exact_s": 1.6373166839998703,
+      "exact_peak_bytes": 11591316,
+      "fm_estimate": 211288.30359406967,
+      "fm_s": 247.32268124200004,
+      "fm_peak_bytes": 4395,
+      "fm_ratio": 1.4376287922301807
+    },
+    {
+      "n": 1600000,
+      "true_distinct": 587625,
+      "exact_s": 5.843261342000005,
+      "exact_peak_bytes": 46647614,
+      "fm_estimate": 775008.9147104719,
+      "fm_s": 984.0083791279999,
+      "fm_peak_bytes": 4395,
+      "fm_ratio": 1.3188834966355616
+    }
+  ],
+  "machine": {
+    "platform": "Linux-6.8.0-1064-azure-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.12.3"
+  }
+}

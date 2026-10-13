@@ -44,34 +44,60 @@ class NaiveFilter:
 
 
 class YourFilter:
-    """Your filter.
+    """Packed Bloom filter with seven hashes and accounted storage."""
 
-        __init__(n_bits, seed=246)
-        add(item)
-        item in filter  ->  bool
-        memory_bits()   ->  how many bits you are using
-
-    `memory_bits()` must not exceed the `n_bits` you were given. The harness
-    checks. Counting only some of your memory is not an optimisation.
-
-    §4.4.2 gives the false-positive rate of a filter with m bits, k hashes and
-    n items inserted. There is a k that minimises it, and it depends on m/n.
-    The harness tells you n before you start, so you have no excuse for guessing.
-
-    Then there is a second question, which is worth more: the harness inserts
-    a **known** number of items, but a real stream does not tell you n in
-    advance. What would you do then? You do not have to implement it - but
-    observation.md asks.
-    """
+    __slots__ = ("n_bits", "seed", "bits")
 
     def __init__(self, n_bits, seed=246):
-        raise NotImplementedError("write your filter")
+        if n_bits <= 2048:
+            raise ValueError("The budget is too small for this implementation")
+
+        # Reserve 2048 bits for the object and its configuration.
+        # Use whole bytes for the remaining packed bit array.
+        n_bytes = (n_bits - 2048) // 8
+
+        self.n_bits = n_bytes * 8
+        self.seed = seed
+        self.bits = bytearray(n_bytes)
+
+        if self.memory_bits() > n_bits:
+            raise RuntimeError("Filter storage exceeds the supplied budget")
+
+    def _positions(self, item):
+        data = str(item).encode("utf-8")
+
+        for index in range(7):
+            key = f"{self.seed}:{index}".encode("utf-8")
+            digest = hashlib.blake2b(
+                data,
+                digest_size=8,
+                key=key,
+            ).digest()
+
+            yield int.from_bytes(digest, "big") % self.n_bits
 
     def add(self, item):
-        raise NotImplementedError
+        for position in self._positions(item):
+            self.bits[position // 8] |= 1 << (position % 8)
 
     def __contains__(self, item):
-        raise NotImplementedError
+        for position in self._positions(item):
+            if not (
+                self.bits[position // 8] & (1 << (position % 8))
+            ):
+                return False
+
+        return True
 
     def memory_bits(self):
-        raise NotImplementedError
+        import sys
+
+        # Count retained instance storage:
+        # object, packed array including overhead, and configuration.
+        total_bytes = (
+            sys.getsizeof(self)
+            + sys.getsizeof(self.bits)
+            + sys.getsizeof(self.n_bits)
+            + sys.getsizeof(self.seed)
+        )
+        return total_bytes * 8
