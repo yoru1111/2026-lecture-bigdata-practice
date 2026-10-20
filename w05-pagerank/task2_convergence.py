@@ -21,7 +21,16 @@ OUT = os.path.join(HERE, "out")
 
 
 def machine():
-    return {"platform": platform.platform(),
+    from pathlib import Path
+    cpu_lines = Path('/proc/cpuinfo').read_text().splitlines()
+    cpu = next((line.split(':', 1)[1].strip() for line in cpu_lines
+                if line.startswith('model name')), platform.machine())
+    ram_kib = int(Path('/proc/meminfo').read_text().splitlines()[0].split()[1])
+    return {"cpu": cpu, "logical_cpus": os.cpu_count(),
+            "host_ram_gib": round(ram_kib / 1024**2, 2),
+            "environment": "ChatGPT execution server; not the student's laptop",
+            "other_work": "No other benchmark intentionally started; shared-host activity unknown",
+            "platform": platform.platform(),
             "processor": platform.processor() or platform.machine(),
             "python": platform.python_version()}
 

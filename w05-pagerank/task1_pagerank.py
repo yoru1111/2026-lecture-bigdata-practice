@@ -41,7 +41,27 @@ def pagerank(graph, beta=0.85, iterations=100, tol=1e-10):
     you should call it converged. Return the ranks, and set `pagerank.iterations`
     to how many you actually used, because Task 2 measures that.
     """
-    raise NotImplementedError("implement PageRank")
+    nodes = list(graph)
+    n = len(nodes)
+    pagerank.iterations = 0
+    if not n:
+        return {}
+    ranks = dict.fromkeys(nodes, 1.0 / n)
+    for step in range(1, iterations + 1):
+        dangling = sum(ranks[v] for v in nodes if not graph[v])
+        base = (1 - beta + beta * dangling) / n
+        updated = dict.fromkeys(nodes, base)
+        for v, outs in graph.items():
+            if outs:
+                share = beta * ranks[v] / len(outs)
+                for w in outs:
+                    updated[w] += share
+        delta = sum(abs(updated[v] - ranks[v]) for v in nodes)
+        ranks = updated
+        pagerank.iterations = step
+        if delta < tol:
+            break
+    return ranks
 
 
 def pagerank_no_teleport(graph, iterations=100):
@@ -50,7 +70,18 @@ def pagerank_no_teleport(graph, iterations=100):
     It exists so you can watch both failures happen rather than take them on
     trust. The harness checks that it really does fail.
     """
-    raise NotImplementedError("implement the broken version")
+    if not graph:
+        return {}
+    ranks = dict.fromkeys(graph, 1.0 / len(graph))
+    for _ in range(iterations):
+        updated = dict.fromkeys(graph, 0.0)
+        for v, outs in graph.items():
+            if outs:
+                share = ranks[v] / len(outs)
+                for w in outs:
+                    updated[w] += share
+        ranks = updated
+    return ranks
 
 
 # ------------------------------------------------------------------- harness

@@ -86,10 +86,38 @@ class YourPageRank:
     """
 
     def __init__(self, beta=0.85, tol=1e-10, max_iter=100):
-        raise NotImplementedError("write your PageRank")
+        self.beta, self.tol, self.max_iter = beta, tol, max_iter
+        self.iterations = 0
+        self._peak_floats = 0
 
     def run(self, graph):
-        raise NotImplementedError
+        nodes = list(graph)
+        n = len(nodes)
+        self.iterations = 0
+        if not n:
+            self._peak_floats = 0
+            return {}
+        index = {v: i for i, v in enumerate(nodes)}
+        adjacency = [[index[w] for w in graph[v]] for v in nodes]
+        dangling = [i for i, outs in enumerate(adjacency) if not outs]
+        ranks = [1.0 / n] * n
+        # Two rank vectors; adjacency contains integers, not edge weights.
+        # Allow 16 additional scalar floats, including parameters/temporaries.
+        self._peak_floats = 2 * n + 16
+        for self.iterations in range(1, self.max_iter + 1):
+            mass = sum(ranks[i] for i in dangling)
+            base = (1 - self.beta + self.beta * mass) / n
+            updated = [base] * n
+            for i, outs in enumerate(adjacency):
+                if outs:
+                    share = self.beta * ranks[i] / len(outs)
+                    for j in outs:
+                        updated[j] += share
+            delta = sum(abs(a - b) for a, b in zip(updated, ranks))
+            ranks = updated
+            if delta < self.tol:
+                break
+        return dict(zip(nodes, ranks))
 
     def memory_floats(self):
-        raise NotImplementedError
+        return self._peak_floats
