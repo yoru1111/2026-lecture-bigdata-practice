@@ -1,0 +1,1 @@
+Before measurement: increasing graph size should raise time per iteration because more nodes and edges are visited. Iteration counts need not rise proportionally: convergence depends on beta and graph structure, not simply node count. A larger beta and a smaller tolerance should generally require more iterations.
