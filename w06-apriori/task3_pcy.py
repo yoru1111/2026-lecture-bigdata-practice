@@ -18,6 +18,7 @@ spending pass one's spare memory to shrink it.
 Correctness first: you must find exactly the same frequent pairs. Finding fewer
 is not an optimisation.
 """
+from array import array
 from collections import Counter
 from itertools import combinations
 
@@ -75,8 +76,44 @@ class YourAlgorithm:
         observation.md asks about it
     """
 
-    def __init__(self, support):
-        raise NotImplementedError("write your algorithm")
+    # prime, a bit above the ~1M distinct pairs pass one sees on the bench data,
+    # so most buckets hold only a handful of pairs. See observation.md (Task 3).
+    BUCKETS = 1_000_003
+
+    def __init__(self, support, buckets=BUCKETS):
+        self.support = support
+        self.buckets = buckets
+        self.peak_counters = 0
+
+    def _bucket(self, a, b):
+        return hash((a, b)) % self.buckets
 
     def run(self, baskets):
-        raise NotImplementedError
+        # pass one: item counts, and every pair hashed into a bucket count
+        counts = Counter()
+        bucket_counts = array("I", [0]) * self.buckets
+        for basket in baskets:
+            counts.update(basket)
+            for a, b in combinations(sorted(basket), 2):
+                bucket_counts[self._bucket(a, b)] += 1
+        frequent = {i for i, c in counts.items() if c >= self.support}
+
+        # between passes: collapse buckets to one bit each, drop the counts
+        bitmap = bytearray((self.buckets + 7) // 8)
+        for k, c in enumerate(bucket_counts):
+            if c >= self.support:
+                bitmap[k >> 3] |= 1 << (k & 7)
+        del bucket_counts
+
+        # pass two: count only pairs of frequent items in a frequent bucket
+        pair_counts = Counter()
+        for basket in baskets:
+            items = sorted(basket & frequent)
+            for a, b in combinations(items, 2):
+                k = self._bucket(a, b)
+                if bitmap[k >> 3] >> (k & 7) & 1:
+                    pair_counts[(a, b)] += 1
+            self.peak_counters = max(self.peak_counters, len(pair_counts))
+
+        return {frozenset(p): c for p, c in pair_counts.items()
+                if c >= self.support}
